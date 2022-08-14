@@ -1,5 +1,6 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
+import EventService from '@/services/EventService.js'
 
 Vue.use(Vuex)
 
@@ -20,18 +21,26 @@ export default new Vuex.Store({
       { id: 4, title: '...', organizer: '...' }
     ]
   },
-  mutations: {},
-  actions: {},
+  // Mutations are synchronous.
+  // This is the "pick up of the bread."
+  //Always put them within Actions.
+  mutations: {
+    ADD_EVENT(state, event) {
+      state.events.push(event)
+    }
+  },
+  // Actions are asynchronous.
+  // Can wrap business logic around Mutations. Do not always commit their Mutations.
+  // This is "asking for picking up the bread".
+  actions: {
+    createEvent({ commit }, event) {
+      //We want to send the event to the mocked db.
+      return EventService.postEvent(event).then(() => {
+        commit('ADD_EVENT', event)
+      })
+    }
+  },
   getters: {
-    catLength: state => {
-      return state.categories.length
-    },
-    doneTodos: (state) => {
-      return state.todos.filter(todo => todo.done)
-    },
-    activeTodosCount: state => {
-      return state.todos.filter(todo => !todo.done).length
-    },
     getEventById: state => id => {
       return state.events.find(event => event.id === id)
     }
