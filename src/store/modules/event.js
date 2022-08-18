@@ -37,16 +37,29 @@ export const mutations = {
 	// Can wrap business logic around Mutations. Do not always commit their Mutations.
 	// This is "asking for picking up the bread".
 export const actions = {
-	createEvent({ commit }, event) {
+	createEvent({ commit, dispatch }, event) {
 	//We want to send the event to the mocked db.
-	return EventService.postEvent(event).then(() => {
+		return EventService.postEvent(event).then(() => {
 			commit('ADD_EVENT', event)
-	})
-	},
+			const notification = {
+				type: 'success',
+				message: 'Your event has been created.'
+			}
+			dispatch('notification/add', notification, { root: true })
+	  })
+			.catch(error => {
+				const notification = {
+					type: 'error',
+					message: 'There was a problem with creating your event:' + error.message
+				}
+				dispatch('notification/add', notification, { root: true })
+				throw error
+			})
+		},
 	// The payload (perPage, page in this example) in both Actions and Mutations can be a single variable OR an object.
 	// In this example it is object with two properties so we need to use curly brackets.
-	fetchEvents({ commit }, { perPage, page }) {
-	EventService.getEvents(perPage, page)
+	fetchEvents({ commit, dispatch }, { perPage, page }) {
+		EventService.getEvents(perPage, page)
 			.then(response => {
 			commit(
 					'SET_EVENTS_TOTAL',
@@ -55,28 +68,38 @@ export const actions = {
 			commit('SET_EVENTS', response.data)
 			})
 			.catch(error => {
-			console.log('There was an error:', error.response)
+				const notification = {
+					type: 'error',
+					message: 'There was a problem fetching events:' + error.message
+				}
+				//'notification/add' is the module/action, 'notification' is the object and '{ root: true } allows the dispatcher
+				// to go to the root state'
+				dispatch('notification/add', notification, { root: true })
 			})
 	},
 	// Acces our getters.
-	fetchEvent({ commit, getters }, id) {
+	fetchEvent({ commit, getters, dispatch }, id) {
 	// Try to find this event.
-	var event = getters.getEventById(id)
+		var event = getters.getEventById(id)
 
-	// If we found, set it.
-	if (event) {
-			commit('SET_EVENT', event)
-			// Else go fetch it.
-	} else {
-			EventService.getEvent(id)
-			.then(response => {
-			commit('SET_EVENT', response.data)
-			})
-			.catch(error => {
-			console.log('There was an error:', error.response)
-			})
-	}
-	}
+			// If we found, set it.
+			if (event) {
+				commit('SET_EVENT', event)
+				// Else go fetch it.
+			} else {
+				EventService.getEvent(id)
+				.then(response => {
+				commit('SET_EVENT', response.data)
+				})
+				.catch(error => {
+					const notification = {
+						type: 'error',
+						message: 'There was a problem fetching event:' + error.message
+					}
+					dispatch('notification/add', notification, { root: true })
+				})
+			}
+		}
 }
 export const	getters = {
 			getEventById: state => id => {
